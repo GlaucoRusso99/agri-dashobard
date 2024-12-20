@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .performance-card {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        .close-btn {
+            font-size: 18px;
+            color: #aaa;
+            cursor: pointer;
+        }
+        .close-btn:hover {
+            color: #000;
+        }
+        .performance-info {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        .chart-container {
+            margin-top: 20px;
+        }
+        canvas {
+            max-width: 100%;
+            height: 350px;
+        }
+        .btn-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container my-5">
+    <h1 class="text-center mb-4">Performance Dashboard - <span th:text="${performance.name}">[Crop Name]</span></h1>
+
+    <a href="/crops" class="btn btn-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back to Crop List
+    </a>
+
+    <div class="performance-card">
+        <span class="close-btn" id="close-performance">&times;</span>
+        <div class="performance-info">
+            <strong>Expected Achieved (kg):</strong> <span th:text="${performance.expectedYield}" expected-yield="--">--</span> kg
+        </div>
+        <div class="performance-info">
+            <strong>Actual Yield (kg):</strong> <span th:text="${performance.actualYield}" actual-yield="--">--</span> kg
+        </div>
+        <div class="performance-info">
+            <strong>Growth Days (dd):</strong> <span th:text="${performance.growthDays}">--</span> dd
+        </div>
+        <div class="performance-info">
+            <strong>Quality:</strong> <span th:text="${performance.quality}">--</span>
+        </div>
+        <div class="performance-info">
+            <strong>Production Cost (€):</strong> <span th:text="${performance.totalProductionCost}" data-production-cost="--">--</span> €
+        </div>
+        <div class="performance-info">
+            <strong>Financial Performance (€):</strong> <span th:text="${performance.financialPerformance}" data-financial-performance="--">--</span> €
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h3>Yield Performance</h3>
+        <canvas id="yieldChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h3>Financial Performance vs Production Cost</h3>
+        <canvas id="financialComparisonChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+    function getNumberFromElement(selector, defaultValue = 0) {
+        const element = document.querySelector(selector);
+        console.log("Element:", element)
+        if (element) {
+            const value = element.innerText.trim();
+            const parsedValue = parseInt(value);
+            return isNaN(parsedValue) ? defaultValue : parsedValue;
+        }
+        return defaultValue;
+    }
+
+    const expectedYield = getNumberFromElement('[expected-yield]', 0);
+    const actualYield = getNumberFromElement('[actual-yield]', 0);
+
+    const yieldData = {
+        labels: ['Expected Yield', 'Actual Yield'],
+        datasets: [{
+            label: 'Yield (kg)',
+            data: [expectedYield, actualYield],
+            borderColor: ['#4BC0C0', '#FF6384'],
+            backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true
+        }]
+    };
+
+    const yieldOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(tooltipItem) {
+                        return Math.round(tooltipItem.raw) + " kg";
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 500,
+                    max: 2500,
+                    callback: function(value) {
+                        return Math.round(value) + " kg";
+                    }
+                }
+            }
+        }
+    };
+
+    const yieldChart = new Chart(document.getElementById('yieldChart'), {
+        type: 'line',
+        data: yieldData,
+        options: yieldOptions
+    });
+
+    const financialPerformance = getNumberFromElement('[data-financial-performance]', 0);
+    const productionCost = getNumberFromElement('[data-production-cost]', 0);
+
+    const financialComparisonData = {
+        labels: ['Metrics'],
+        datasets: [
+            {
+                label: 'Financial Performance (€)',
+                data: [financialPerformance],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Production Cost (€)',
+                data: [productionCost],
+                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }
+        ]
+    };
+
+    const financialComparisonOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(tooltipItem) {
+                        return Math.round(tooltipItem.raw) + " €";
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1000,
+                    callback: function(value) {
+                        return Math.round(value) + " €";
+                    }
+                }
+            }
+        }
+    };
+
+    const financialComparisonChart = new Chart(document.getElementById('financialComparisonChart'), {
+        type: 'bar',
+        data: financialComparisonData,
+        options: financialComparisonOptions
+    });
+
+    document.getElementById("close-performance").addEventListener("click", function () {
+        window.history.back();
+    });
+</script>
+</body>
+</html>

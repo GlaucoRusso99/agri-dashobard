@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Crop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .info {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .error {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center">Update Crop</h1>
+    <form th:action="@{/crops/edit/{name}(name=${crop.name})}" method="post" class="mt-4">
+        <div class="mb-3">
+            <label for="type" class="form-label">Type</label>
+            <select id="type" name="type" class="form-select" required>
+                <option value="" disabled>Select the crop type</option>
+                <option value="Cereale" th:selected="${crop.type == 'Cereale'}">Cereal</option>
+                <option value="Ortaggio" th:selected="${crop.type == 'Ortaggio'}">Vegetable</option>
+                <option value="Frutta" th:selected="${crop.type == 'Frutta'}">Fruit</option>
+            </select>
+            <div class="info" id="typeInfo"></div>
+        </div>
+
+        <div class="mb-3">
+            <label for="plantingDate" class="form-label">Planting Date</label>
+            <input type="date" id="plantingDate" name="plantingDate" class="form-control" th:value="${crop.plantingDate}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="expectedYield" class="form-label">Expected Yield (kg)</label>
+            <input type="number" id="expectedYield" name="expectedYield" class="form-control" step="0.01" th:value="${crop.expectedYield}" placeholder="Enter expected yield" required>
+            <div class="info" id="yieldRangeInfo"></div>
+            <div class="error" id="yieldError"></div>
+        </div>
+
+        <div class="mb-3">
+            <label for="areaCultivated" class="form-label">Cultivated Area (ha)</label>
+            <input type="number" id="areaCultivated" name="areaCultivated" class="form-control" step="0.01" th:value="${crop.areaCultivated}" placeholder="Enter cultivated area" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="waterRequirement" class="form-label">Water Requirement (liters)</label>
+            <input type="number" id="waterRequirement" name="waterRequirement" class="form-control" step="0.01" th:value="${crop.waterRequirement}" placeholder="Enter water requirement" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="unitPrice" class="form-label">Unit Price (€ per kg)</label>
+            <input type="number" id="unitPrice" name="unitPrice" class="form-control" step="0.01" th:value="${crop.unitPrice}" placeholder="Enter unit price" required>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="/crops" class="btn btn-secondary">Back</a>
+            <button type="submit" class="btn btn-primary">Update Crop</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const yieldRanges = {
+        "Cereale": { min: 4000, max: 8000 },
+        "Ortaggio": { min: 25000, max: 50000 },
+        "Frutta": { min: 20000, max: 30000 }
+    };
+
+    const typeSelect = document.getElementById("type");
+    const expectedYield = document.getElementById("expectedYield");
+    const yieldRangeInfo = document.getElementById("yieldRangeInfo");
+    const yieldError = document.getElementById("yieldError");
+
+    const updateYieldRangeInfo = () => {
+        const selectedType = typeSelect.value;
+
+        if (selectedType && yieldRanges[selectedType]) {
+            const { min, max } = yieldRanges[selectedType];
+            yieldRangeInfo.textContent = `Valid theoretical values: ${min}–${max} kg/ha`;
+            yieldError.textContent = "";
+        } else {
+            yieldRangeInfo.textContent = "";
+        }
+    };
+
+    typeSelect.addEventListener("change", updateYieldRangeInfo);
+
+    document.querySelector("form").addEventListener("submit", (event) => {
+        const selectedType = typeSelect.value;
+        const yieldValue = parseFloat(expectedYield.value);
+
+        if (selectedType && yieldRanges[selectedType]) {
+            const { min, max } = yieldRanges[selectedType];
+            if (yieldValue < min || yieldValue > max) {
+                event.preventDefault();
+                yieldError.textContent = `Error: expected yield must be between ${min} and ${max} kg/ha.`;
+            } else {
+                yieldError.textContent = "";
+            }
+        }
+    });
+
+    updateYieldRangeInfo();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
